@@ -7,6 +7,7 @@ from backend.models.category import Category
 from backend.models.product import Product
 from backend.repositories.category_repository import CategoryRepository
 from backend.repositories.product_repository import ProductRepository
+from backend.services.exceptions import NotFoundError
 from backend.services.product_service import ProductService
 
 
@@ -33,6 +34,15 @@ async def seeded_products(db_session) -> list[Product]:
             price=Decimal("1200.00"),
             stock=3,
         ),
+        Product(
+            name="Lenovo Legion",
+            description="notebook gamer",
+            brand="Lenovo",
+            category_id=notebooks.id,
+            price=Decimal("1500.00"),
+            specs={"ram_gb": 16},
+            stock=0,
+        ),
     ]
     db_session.add_all(products)
     await db_session.flush()
@@ -47,7 +57,7 @@ def _service(db_session) -> ProductService:
 async def test_search_is_case_insensitive(db_session, seeded_products):
     results = await _service(db_session).search(search="LENOVO")
 
-    assert [p.name for p in results] == ["Lenovo ThinkPad"]
+    assert sorted(p.name for p in results) == ["Lenovo Legion", "Lenovo ThinkPad"]
 
 
 @pytest.mark.asyncio
@@ -69,3 +79,39 @@ async def test_search_unknown_category_returns_empty_list(db_session, seeded_pro
     results = await _service(db_session).search(category="CategoriaFake")
 
     assert results == []
+
+
+@pytest.mark.asyncio
+async def test_search_filters_by_min_ram_gb(db_session, seeded_products):
+    results = await _service(db_session).search(min_ram_gb=16)
+
+    assert [p.name for p in results] == ["Lenovo Legion"]
+
+
+@pytest.mark.asyncio
+async def test_search_in_stock_true_excludes_zero_stock(db_session, seeded_products):
+    results = await _service(db_session).search(in_stock=True)
+
+    assert sorted(p.name for p in results) == ["Dell Inspiron", "Lenovo ThinkPad"]
+
+
+@pytest.mark.asyncio
+async def test_search_in_stock_false_returns_only_zero_stock(db_session, seeded_products):
+    results = await _service(db_session).search(in_stock=False)
+
+    assert [p.name for p in results] == ["Lenovo Legion"]
+
+
+@pytest.mark.asyncio
+async def test_get_stock_returns_existing_product_stock(db_session, seeded_products):
+    thinkpad = seeded_products[0]
+
+    stock = await _service(db_session).get_stock(thinkpad.id)
+
+    assert stock == 5
+
+
+@pytest.mark.asyncio
+async def test_get_stock_raises_not_found_when_missing(db_session):
+    with pytest.raises(NotFoundError):
+        await _service(db_session).get_stock(999)

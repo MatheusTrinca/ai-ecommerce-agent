@@ -17,6 +17,9 @@ class CustomerService:
             raise NotFoundError(f"Customer {customer_id} not found")
         return customer
 
+    async def search(self, name: str | None = None, email: str | None = None) -> list[Customer]:
+        return await self._customer_repository.search(name=name, email=email)
+
 
 def get_customer_service(session: AsyncSession = Depends(get_db)) -> CustomerService:
     return CustomerService(CustomerRepository(session))

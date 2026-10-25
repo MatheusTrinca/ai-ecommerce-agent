@@ -19,12 +19,17 @@ class ProductRepository:
         search: str | None = None,
         category_id: int | None = None,
         max_price: Decimal | None = None,
+        min_ram_gb: int | None = None,
+        in_stock: bool | None = None,
     ) -> list[Product]:
         """Busca produtos com filtros opcionais e combináveis entre si (AND).
 
         - search: substring case-insensitive encontrada em name OU description OU brand.
         - category_id: produto deve pertencer exatamente a essa categoria.
         - max_price: price deve ser <= max_price (limite superior inclusivo).
+        - min_ram_gb: specs["ram_gb"] deve ser >= min_ram_gb (produtos sem essa chave no
+          JSON nunca batem, pois a comparação com NULL nunca é verdadeira).
+        - in_stock: True -> stock > 0; False -> stock == 0.
 
         Qualquer filtro que seja None não deve restringir o resultado (comporta-se
         como "sem filtro nesse campo"). Se todos forem None, devolve todos os produtos.
@@ -45,6 +50,12 @@ class ProductRepository:
             clauses.append(Product.category_id == category_id)
         if max_price is not None:
             clauses.append(Product.price <= max_price)
+        if min_ram_gb is not None:
+            clauses.append(Product.specs["ram_gb"].as_integer() >= min_ram_gb)
+        if in_stock is True:
+            clauses.append(Product.stock > 0)
+        elif in_stock is False:
+            clauses.append(Product.stock == 0)
 
         if clauses:
             stmt = stmt.where(and_(*clauses))

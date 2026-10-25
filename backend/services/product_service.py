@@ -30,6 +30,8 @@ class ProductService:
         search: str | None = None,
         category: str | None = None,
         max_price: Decimal | None = None,
+        min_ram_gb: int | None = None,
+        in_stock: bool | None = None,
     ) -> list[Product]:
         category_id: int | None = None
         if category is not None:
@@ -39,8 +41,16 @@ class ProductService:
             category_id = category_obj.id
 
         return await self._product_repository.search(
-            search=search, category_id=category_id, max_price=max_price
+            search=search,
+            category_id=category_id,
+            max_price=max_price,
+            min_ram_gb=min_ram_gb,
+            in_stock=in_stock,
         )
+
+    async def get_stock(self, product_id: int) -> int:
+        product = await self.get_by_id(product_id)
+        return product.stock
 
 
 def get_product_service(session: AsyncSession = Depends(get_db)) -> ProductService:

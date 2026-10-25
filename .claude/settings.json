@@ -7,7 +7,9 @@
       "Bash(curl -s \"http://127.0.0.1:8000/products/1\")",
       "Bash(curl -s \"http://127.0.0.1:8000/orders/12345\")",
       "Bash(curl -s \"http://127.0.0.1:8000/customers/1/orders\")",
-      "Bash(curl -s -w \"\\\\nHTTP_STATUS:%{http_code}\\\\n\" \"http://127.0.0.1:8000/customers/999\")"
+      "Bash(curl -s -w \"\\\\nHTTP_STATUS:%{http_code}\\\\n\" \"http://127.0.0.1:8000/customers/999\")",
+      "Bash(uv run python -c ' *)",
+      "Bash(uv sync *)"
     ]
   }
 }
